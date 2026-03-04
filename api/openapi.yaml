@@ -1,0 +1,27 @@
+swagger: "2.0"
+info:
+  title: image-upload-api
+  description: API Gateway for uploading images
+  version: 1.0.0
+
+schemes:
+  - https
+
+paths:
+  /v1/images/upload:
+    post:
+      summary: Upload Image
+      operationId: uploadImage
+      x-google-backend:
+        address: https://us-central1-project-8175b238-5b8b-4fa4-8cf.cloudfunctions.net/upload-image
+      security:
+        - api_key: []
+      responses:
+        '200':
+          description: Image uploaded
+
+securityDefinitions:
+  api_key:
+    type: "apiKey"
+    name: "x-api-key"
+    in: "header"
