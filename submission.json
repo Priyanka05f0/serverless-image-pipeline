@@ -1,4 +1,14 @@
 {
-  "gateway_url": "https://image-upload-gateway-1fpanf3d.uc.gateway.dev/v1/images/upload",
-  "api_key": "dummy-api-key"
+  "project_id": "project-8175b238-5b8b-4fa4-8cf",
+  "pipeline": "serverless-image-pipeline",
+  "region": "us-central1",
+  "api_gateway_url": "https://image-upload-gateway-1fpanf3d.uc.gateway.dev/upload",
+  "api_key": "dummy-api-key",
+  "components": [
+    "Cloud Storage",
+    "Pub/Sub",
+    "Cloud Functions Gen2",
+    "Secret Manager",
+    "API Gateway"
+  ]
 }

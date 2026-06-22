@@ -1,34 +1,36 @@
 import functions_framework
-from google.cloud import storage
 from google.cloud import pubsub_v1
-import uuid
+import json
+import os
 
-PROJECT_ID = "project-8175b238-5b8b-4fa4-8cf"
-BUCKET_NAME = "project-8175b238-5b8b-4fa4-8cf-uploads"
+# Initialize outside to reuse, but handle the Project ID safely
+publisher = pubsub_v1.PublisherClient()
 TOPIC_ID = "image-processing-requests"
 
-@functions_framework.http
-def upload_image(request):
+@functions_framework.cloud_event
+def upload_image(cloud_event):
+    # Move Project ID check inside or provide a hardcoded fallback
+    project_id = os.environ.get("GOOGLE_CLOUD_PROJECT") or "project-8175b238-5b8b-4fa4-8cf"
+    
+    try:
+        data = cloud_event.data
+        # Eventarc for GCS sometimes nests data or uses 'name' vs 'file'
+        bucket = data.get("bucket")
+        name = data.get("name")
 
-    if request.method != "POST":
-        return ("Only POST allowed", 405)
+        if not name or not bucket:
+            print(f"Skipping: Missing data. Bucket: {bucket}, Name: {name}")
+            return
 
-    if 'file' not in request.files:
-        return ("No file uploaded", 400)
+        if name.endswith(".zip"):
+            print(f"Skipping source code zip: {name}")
+            return
 
-    file = request.files['file']
-    filename = str(uuid.uuid4()) + "-" + file.filename
+        topic_path = publisher.topic_path(project_id, TOPIC_ID)
+        message = json.dumps({"bucket": bucket, "name": name}).encode("utf-8")
 
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(BUCKET_NAME)
-    blob = bucket.blob(filename)
+        future = publisher.publish(topic_path, message)
+        print(f"SUCCESS: Published {name} to Pub/Sub. ID: {future.result()}")
 
-    blob.upload_from_file(file)
-
-    publisher = pubsub_v1.PublisherClient()
-    topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
-
-    message = f"{BUCKET_NAME}/{filename}"
-    publisher.publish(topic_path, message.encode("utf-8"))
-
-    return ("Upload accepted", 202)
+    except Exception as e:
+        print(f"CRITICAL ERROR in upload_image: {e}")

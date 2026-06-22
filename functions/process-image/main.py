@@ -21,7 +21,8 @@ def process_image(cloud_event):
 
     data = json.loads(message_data)
 
-    file_name = data["file_name"]
+    # FIXED HERE
+    file_name = data["name"]
 
     storage_client = storage.Client()
 
